@@ -1,0 +1,16 @@
+
+.idea/
+build/
+.env
+node_modules/
+ormconfig.json
+coverage
+**.lock
+
+dist
+tmp/*
+!tmp/avatars/.gitkeep
+!tmp/.gitkeep
+
+scripts/pg_dump.sh
+scripts/remove_old_backups.sh
