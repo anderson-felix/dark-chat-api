@@ -1,0 +1,115 @@
+name: Install docker and docker-compose
+
+description: Install docker and docker-compose in ubuntu machines
+
+inputs:
+  ssh_host:
+    description: remote address
+    required: true
+
+  ssh_user:
+    description: remote username
+    required: true
+
+  ssh_key:
+    description: ssh private key
+    required: true
+
+  reboot_time:
+    default: 60
+    description: time in seconds necessary for the remote host to completely reboot
+
+runs:
+  using: composite
+  steps:
+    - name: Install docker and docker-composer
+      uses: ./.github/actions/ssh
+      with:
+        ssh_host: ${{ inputs.ssh_host }}
+        ssh_user: ${{ inputs.ssh_user }}
+        ssh_key: ${{ inputs.ssh_key }}
+        command: |
+          INSTALL_DOCKER=false
+          which docker || INSTALL_DOCKER=true
+
+          if [["$INSTALL_DOCKER" == "true"]]; then
+
+            # 0 - prevent interactive mode
+            export DEBIAN_FRONTEND=noninteractive
+
+            # 1 - update the apt package index
+            sudo apt-get update -y
+            sudo apt-get install \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release -y
+
+            # 2 - add dockers official GPG key
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor --batch --yes -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+            # 3 - setup a stable repository
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+            # 4 - install docker
+            sudo apt-get update -y
+            sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+
+            # 5 - create the docker group
+            sudo groupadd docker
+
+            # 6 - add the current user permanently to the docker group
+            sudo usermod -aG docker $USER
+
+            # 7 - verify the install version
+            docker --version
+
+            # signal the github runner to reboot the machine
+            touch /tmp/install_docker_action
+
+            echo "Reboot the system to complete the docker installation."
+          else
+            echo "Docker already installed. No system reboot is needed."
+          fi
+
+          INSTALL_DOCKER_COMPOSE=false
+          which docker-compose || INSTALL_DOCKER_COMPOSE=true
+
+          if [[ "$INSTALL_DOCKER_COMPOSE" == "true" ]]; then
+            # 0 - prevent interactive mode
+            export DEBIAN_FRONTEND=noninteractive
+
+            # 1 - setup a stable release
+            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+            # 2 - apply executable permission to the binary
+            sudo chmod +x /usr/local/bin/docker-compose
+
+            # 3 - check the docker-compose installed version
+            docker-compose --version
+          fi
+
+    - name: Check if reboot is needed
+      id: check_reboot
+      uses: picodebr/ssh-action@v1.2
+      with:
+        ssh_host: ${{ inputs.ssh_host }}
+        ssh_user: ${{ inputs.ssh_user }}
+        ssh_key: ${{ inputs.ssh_key }}
+        command: echo "$(ls /tmp | grep -i install_docker_action)"
+
+    - name: Reboot the server if necessary
+      if: steps.check_reboot.outputs.output == 'install_docker_action'
+      uses: picodebr/ssh-action@v1.2
+      with:
+        ssh_host: ${{ inputs.ssh_host }}
+        ssh_user: ${{ inputs.ssh_user }}
+        ssh_key: ${{ inputs.ssh_key }}
+        command: sudo reboot
+
+    - name: Wait server reboot if necessary
+      if: steps.check_reboot.outputs.output == 'install_docker_action'
+      shell: bash
+      run: sleep ${{ inputs.reboot_time }}s
