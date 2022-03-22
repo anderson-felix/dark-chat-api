@@ -21,18 +21,18 @@ jobs:
       - name: Create ssh folder
         sheel: bash
         run: |
-        mkdir -p ~/.ssh
-        echo '${{ env.KEY }}' > ~/.ssh/${{ env.KEY_NAME }}
-        sudo chmod 600 ~/.ssh/${{ env.KEY_NAME }}
+          mkdir -p ~/.ssh
+          echo '${{ env.KEY }}' > ~/.ssh/${{ env.KEY_NAME }}
+          sudo chmod 600 ~/.ssh/${{ env.KEY_NAME }}
 
       - name: Connecting on server
         sheel: bash
         run: |
-        ssh ${{ env.USER }}@${{ env.HOST }} \
-        -o PubKeyAuthentication=yes \
-        -o RequestTTY=no \
-        -o StrictHostKeyChecking=no \
-        -i ~/.ssh/${{ env.KEY_NAME }}
+          ssh ${{ env.USER }}@${{ env.HOST }} \
+          -o PubKeyAuthentication=yes \
+          -o RequestTTY=no \
+          -o StrictHostKeyChecking=no \
+          -i ~/.ssh/${{ env.KEY_NAME }}
 
       - name: List files on server
         sheel: bash
