@@ -38,6 +38,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:${{ env.NEW_IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache,mode=max
 
       # - name: Copy scripts to remote server
       #   uses: ./.github/actions/rsync
