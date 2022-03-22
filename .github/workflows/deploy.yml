@@ -1,7 +1,11 @@
 name: GitHub Actions Demo
 on:
-  label:
-    types: [created, deleted]
+  push:
+    branches:
+      - main
+
+env:
+  SERVER: production
 
 jobs:
   Explore-GitHub-Actions:
@@ -17,4 +21,5 @@ jobs:
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
+      - run: echo "🖥️ This job is a environment ${{ env.SERVER }}."
       - run: echo "🍏 This job's status is ${{ job.status }}."
