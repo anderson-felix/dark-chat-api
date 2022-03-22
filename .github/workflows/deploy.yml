@@ -15,18 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: List files on local machine
-        sheel: bash
+        shell: bash
         run: ls -la
 
       - name: Create ssh folder
-        sheel: bash
+        shell: bash
         run: |
           mkdir -p ~/.ssh
           echo '${{ env.KEY }}' > ~/.ssh/${{ env.KEY_NAME }}
           sudo chmod 600 ~/.ssh/${{ env.KEY_NAME }}
 
       - name: Connecting on server
-        sheel: bash
+        shell: bash
         run: |
           ssh ${{ env.USER }}@${{ env.HOST }} \
           -o PubKeyAuthentication=yes \
@@ -35,5 +35,5 @@ jobs:
           -i ~/.ssh/${{ env.KEY_NAME }}
 
       - name: List files on server
-        sheel: bash
+        shell: bash
         run: ls -la
