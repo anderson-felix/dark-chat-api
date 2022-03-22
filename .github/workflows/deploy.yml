@@ -31,6 +31,6 @@ jobs:
           ssh ${{ env.USER }}@${{ env.HOST }} \
           -o PubKeyAuthentication=yes \
           -o RequestTTY=no \
-          -i ~/.ssh/${{ env.KEY_NAME }}
-
+          -o StrictHostKeyChecking=no \
+          -i ~/.ssh/${{ env.KEY_NAME }} \
           ls -la
