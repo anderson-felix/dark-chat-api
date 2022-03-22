@@ -8,13 +8,28 @@ env:
   KEY: ${{ secrets.SSH_KEY }}
   USER: ${{ secrets.SSH_USER }}
   HOST: ${{ secrets.SSH_HOST }}
+  KEY_NAME: chatkey
 
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
+      - name: List files on local machine
+        run: ls -la
+
+      - name: Create ssh folder
+        run: |
+        mkdir ~/.ssh
+        echo '${{ env.KEY }}' > ~/.ssh/${{ env.KEY_NAME }}
+        sudo chmod 600 ~/.ssh/${{ env.KEY_NAME }}
+
       - name: Connecting on server
-        run: ssh ${{ env.USER }}@${{ env.HOST }} -i ${{ env.KEY }}
+        run: |
+        ssh ${{ env.USER }}@${{ env.HOST }} \
+        -o PubKeyAuthentication=yes \
+        -o RequestTTY=no \
+        -o StrictHostKeyChecking=no \
+        -i ~/.ssh/${{ env.KEY_NAME }}
 
       - name: List files on server
         run: ls -la
