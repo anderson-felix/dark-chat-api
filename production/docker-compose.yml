@@ -1,0 +1,31 @@
+version: '3.7'
+
+networks:
+  chat_network:
+
+services:
+  chat-backend:
+    image: darklabs/chat-backend:latest
+    container_name: chat-backend
+    ports:
+      - 8080:5000
+    restart: always
+    networks:
+      chat_network:
+    volumes:
+      - './.env:/app/.env'
+
+  nginx:
+    image: nginx:stable
+    container_name: todo-nginx
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+
+    networks:
+      chat_network:
+    volumes:
+      - './nginx/conf.d:/etc/nginx/conf.d:ro'
+      - './certbot/www:/etc/nginx/acme_challenge:ro'
+      - './certbot/certificate:/etc/nginx/certificate:ro'

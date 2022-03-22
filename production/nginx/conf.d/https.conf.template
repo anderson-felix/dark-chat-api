@@ -1,0 +1,13 @@
+server {
+  listen 443 default_server ssl;
+  listen [::]:443 ssl;
+
+  server_name ${SERVER_NAME};
+
+  ssl_certificate     /etc/nginx/certificate/live/${SERVER_NAME}/fullchain.pem;
+  ssl_certificate_key /etc/nginx/certificate/live/${SERVER_NAME}/privkey.pem;
+
+  location / {
+    proxy_pass http://app:8080;
+  }
+}

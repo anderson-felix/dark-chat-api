@@ -5,7 +5,10 @@
   "license": "MIT",
   "scripts": {
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files && find dist/ -name \"*.test.ts\" -delete",
-    "dev": "ts-node-dev -r tsconfig-paths/register --inspect --transpile-only --ignore-watch node_modules src/shared/infra/http/server.ts",
+    "dev": "yarn up && yarn logs",
+    "up": "docker-compose up -d",
+    "down": "docker-compose down",
+    "logs": "docker logs chat-backend -f",
     "start": "node dist/shared/infra/http/server.js",
     "eslint:fix": "eslint --fix --ext .js,.ts src",
     "test": "jest  --verbose --expand",
