@@ -1,1 +1,1 @@
-[ ] - Implementar fluxo de CI / CD
+[x] - Implementar fluxo de CI / CD
