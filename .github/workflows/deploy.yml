@@ -18,8 +18,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_KEY }}
           source: production/scripts
-          destination: |
-            ~/app/production
+          destination: ~/app/production
 
       - name: Install docker and docker-compose
         uses: ./.github/actions/ssh
@@ -38,37 +37,36 @@ jobs:
               echo "Reboot the system to complete the docker installation."
             fi
 
-        - name: Copy .install_docker file from remote server
-          uses: ./.github/actions/rsync
-          with:
-            user: ${{ secrets.SSH_USER }}
-            host: ${{ secrets.SSH_HOST }}
-            key: ${{ secrets.SSH_KEY }}
-            source: ~/app/production/scripts/.should_reboot
-            destination: ./app/scripts/
-            copy_from: true
+      - name: Copy .install_docker file from remote server
+        uses: ./.github/actions/rsync
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          source: ~/app/production/scripts/.should_reboot
+          destination: ./app/scripts/
+          copy_from: true
 
-        - name: Check if reboot is needed
-          shell: bash
-          run: |
-            if [[ $(cat production/scripts/.should_reboot) == "true" ]]; then
-              echo "SHOULD_REBOOT=true" >> $GITHUB_ENV
-            fi
+      - name: Check if reboot is needed
+        shell: bash
+        run: |
+          if [[ $(cat production/scripts/.should_reboot) == "true" ]]; then
+            echo "SHOULD_REBOOT=true" >> $GITHUB_ENV
+          fi
 
-        - name: Reboot the server if necessary
-          if: env.SHOULD_REBOOT == 'true'
-          uses: ./.github/actions/ssh
-          with:
-            user: ${{ secrets.SSH_USER }}
-            host: ${{ secrets.SSH_HOST }}
-            key: ${{ secrets.SSH_KEY }}
-            commands: sudo reboot
+      - name: Reboot the server if necessary
+        if: env.SHOULD_REBOOT == 'true'
+        uses: ./.github/actions/ssh
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          commands: sudo reboot
 
-        - name: Wait server reboot if necessary
-          if: env.SHOULD_REBOOT == 'true'
-          shell: bash
-          run: sleep 60s
-
+      - name: Wait server reboot if necessary
+        if: env.SHOULD_REBOOT == 'true'
+        shell: bash
+        run: sleep 60s
 
   Deploy:
     runs-on: ubuntu-latest
