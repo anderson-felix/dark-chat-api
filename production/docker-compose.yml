@@ -17,7 +17,7 @@ services:
 
   nginx:
     image: nginx:stable
-    container_name: todo-nginx
+    container_name: chat-nginx
     ports:
       - 80:80
       - 443:443

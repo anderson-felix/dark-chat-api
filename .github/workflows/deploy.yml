@@ -10,8 +10,74 @@ env:
   HOST: ${{ secrets.SSH_HOST }}
 
 jobs:
-  Server_connection:
+  Setup:
     runs-on: ubuntu-latest
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v2
+
+      - name: Copy scripts to remote server
+        uses: ./.github/actions/rsync
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          source: production/scripts
+          destination: ~/app/production
+
+      - name: Install docker and docker-compose
+        uses: ./.github/actions/ssh
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          commands: |
+            cd ~/app/production/scripts
+
+            ./install-docker.sh
+            ./install-docker-compose.sh
+
+            if ! which docker; then
+              echo true > .should_reboot
+              echo "Reboot the system to complete the docker installation."
+            fi
+
+        - name: Copy .install_docker file from remote server
+          uses: ./.github/actions/rsync
+          with:
+            user: ${{ secrets.SSH_USER }}
+            host: ${{ secrets.SSH_HOST }}
+            key: ${{ secrets.SSH_KEY }}
+            source: ~/app/production/scripts/.should_reboot
+            destination: ./app/scripts/
+            copy_from: true
+
+        - name: Check if reboot is needed
+          shell: bash
+          run: |
+            if [[ $(cat production/scripts/.should_reboot) == "true" ]]; then
+              echo "SHOULD_REBOOT=true" >> $GITHUB_ENV
+            fi
+
+        - name: Reboot the server if necessary
+          if: env.SHOULD_REBOOT == 'true'
+          uses: ./.github/actions/ssh
+          with:
+            user: ${{ secrets.SSH_USER }}
+            host: ${{ secrets.SSH_HOST }}
+            key: ${{ secrets.SSH_KEY }}
+            commands: sudo reboot
+
+        - name: Wait server reboot if necessary
+          if: env.SHOULD_REBOOT == 'true'
+          shell: bash
+          run: sleep 60s
+
+
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: Setup
+    environment: production
     steps:
       - name: Get source code
         uses: actions/checkout@v2
@@ -41,28 +107,57 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache,mode=max
 
-      # - name: Copy scripts to remote server
-      #   uses: ./.github/actions/rsync
-      #   with:
-      #     user: ${{ secrets.SSH_USER }}
-      #     host: ${{ secrets.SSH_HOST }}
-      #     key: ${{ secrets.SSH_KEY }}
-      #     source: production/scripts
-      #     destination: ~/todo/production
+      - name: Create nginx config files
+        env:
+          SERVER_NAME: ${{ SSL_CERTIFICATE_ADDRESS }}
+        shell: bash
+        run: |
+          cd production/nginx/conf.d
 
-      # - name: Create ssh folder
-      #   shell: bash
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     echo '${{ env.KEY }}' > ~/.ssh/${{ env.KEY_NAME }}
-      #     sudo chmod 600 ~/.ssh/${{ env.KEY_NAME }}
+          # make sure envsubst don't replace these nginx variables
+          export uri='$uri'
+          export host='$host'
 
-      # - name: Connecting on server
-      #   shell: bash
-      #   run: |
-      #     ssh ${{ env.USER }}@${{ env.HOST }} \
-      #     -o PubKeyAuthentication=yes \
-      #     -o RequestTTY=no \
-      #     -o StrictHostKeyChecking=no \
-      #     -i ~/.ssh/${{ env.KEY_NAME }} \
-      #     ls -la
+          envsubst < http.conf.template > http.conf
+          envsubst < https.conf.template > https.conf.disabled
+          rm http.conf.template https.conf.template
+
+      - name: Create config files
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          APP_API_URL: ${{ secrets.APP_API_URL }}
+
+        shell: bash
+        run: |
+          cd production
+          envsubst < .env.template > .env
+          rm .env.template
+
+      - name: Copy scripts to remote server
+        uses: ./.github/actions/rsync
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          source: production
+          destination: ~/app/
+
+      - name: Setup remote container
+        uses: ./.github/actions/ssh
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          commands: |
+            cd app/production
+
+            # update the containers
+            docker-compose down
+            docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
+            docker-compose up -d
+
+            # install ssl certificate if necessary
+            scripts/install-ssl-certificate.sh ${{ secrets.SSL_CERTIFICATE_ADDRESS }} ${{ secrets.SSL_CERTIFICATE_EMAIL }}
+
+            # remove all unused images
+            docker image prune -af
