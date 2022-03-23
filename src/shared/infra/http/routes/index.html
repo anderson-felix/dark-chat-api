@@ -92,12 +92,12 @@
       e.preventDefault();
 
       if (input.value) {
-        socket.emit('chatzinho', input.value);
+        socket.emit('chat', input.value);
         input.value = '';
       }
     });
 
-    socket.on('chatzinho', msg => {
+    socket.on('chat', msg => {
       const item = document.createElement('li');
       item.textContent = `${msg.user_id}: ${msg.text}`;
 
