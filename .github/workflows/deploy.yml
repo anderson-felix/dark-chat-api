@@ -110,6 +110,7 @@ jobs:
             docker-compose up -d
 
             # install ssl certificate if necessary
+            sudo chmod 700 install-ssl-certificate.sh
             scripts/install-ssl-certificate.sh ${{ secrets.SSL_CERTIFICATE_ADDRESS }} ${{ secrets.SSL_CERTIFICATE_EMAIL }}
 
             # remove all unused images
