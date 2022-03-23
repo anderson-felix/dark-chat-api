@@ -19,7 +19,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           source: production/scripts
           destination: ~/app/production
-
       - name: Install docker and docker-compose
         uses: ./.github/actions/ssh
         with:
