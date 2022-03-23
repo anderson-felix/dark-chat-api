@@ -1,0 +1,51 @@
+name: SSL installer
+
+description: SSL certificate installation with certbot
+
+inputs:
+  ssh_key:
+    description: ssh private key
+    required: true
+
+  ssh_user:
+    description: remote host username
+    required: true
+
+  ssh_host:
+    descrition: remote host address
+    required: true
+
+  certificate_address:
+    description: URL to emit certificate
+    required: true
+
+  email:
+    description: email of the address owner
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Connect to server
+      uses: ./.github/actions/ssh
+      with:
+        host: ${{ inputs.ssh_host }}
+        user: ${{ inputs.ssh_user }}
+        key: ${{ inputs.ssh_key }}
+        command: |
+          if [ ! -f nginx/conf.d/https.conf ]; then
+            echo "Installing SSL certificate."
+
+            cd ~/app/production
+
+            docker run --rm \
+              --volume "$(pwd)/certbot/www:/var/www/html:rw" \
+              --volume "$(pwd)/certbot/certificate:/etc/letsencrypt:rw" \
+              certbot/certbot:latest certonly --webroot -w /var/www/html \
+              -d ${{ inputs.certificate_address }} --agree-tos --email ${{ inputs.email }} -n && \
+            mv nginx/conf.d/https.conf.disabled nginx/conf.d/https.conf && \
+            docker-compose restart nginx
+            echo "SSL certificate installed."
+          else
+            echo "SSL certificate already installed."
+          fi

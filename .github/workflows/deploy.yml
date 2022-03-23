@@ -86,6 +86,15 @@ jobs:
           source: production
           destination: ~/app/
 
+      - name: Install SSL certificate
+        uses: ./.github/actions/ssl
+        with:
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
+          certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
+          email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
+
       - name: Setup remote container
         uses: ./.github/actions/ssh
         with:
@@ -99,10 +108,6 @@ jobs:
             docker-compose down
             docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
             docker-compose up -d
-
-            # install ssl certificate if necessary
-            sudo chmod 700 install-ssl-certificate.sh
-            scripts/install-ssl-certificate.sh ${{ secrets.SSL_CERTIFICATE_ADDRESS }} ${{ secrets.SSL_CERTIFICATE_EMAIL }}
 
             # remove all unused images
             docker image prune -af
