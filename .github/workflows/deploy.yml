@@ -103,7 +103,7 @@ jobs:
 
       - name: Create nginx config files
         env:
-          SERVER_NAME: ${{ SSL_CERTIFICATE_ADDRESS }}
+          SERVER_NAME: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
         shell: bash
         run: |
           cd production/nginx/conf.d
