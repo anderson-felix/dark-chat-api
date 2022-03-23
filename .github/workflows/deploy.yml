@@ -86,15 +86,6 @@ jobs:
           source: production
           destination: ~/app/
 
-      - name: Install SSL certificate
-        uses: ./.github/actions/ssl
-        with:
-          ssh_user: ${{ secrets.SSH_USER }}
-          ssh_host: ${{ secrets.SSH_HOST }}
-          ssh_key: ${{ secrets.SSH_KEY }}
-          certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
-          email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
-
       - name: Setup remote container
         uses: ./.github/actions/ssh
         with:
@@ -109,5 +100,19 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
             docker-compose up -d
 
-            # remove all unused images
-            docker image prune -af
+      - name: Install SSL certificate
+        uses: ./.github/actions/ssl
+        with:
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
+          certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
+          email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
+
+      - name: Remove unused docker images
+        uses: ./.github/actions/ssh
+        with:
+          user: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_KEY }}
+          command: docker image prune -af
