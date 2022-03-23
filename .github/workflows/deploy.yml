@@ -29,6 +29,7 @@ jobs:
           commands: |
             cd ~/app/production/scripts
 
+            sudo chmod 700 install-docker.sh install-docker-compose.sh
             ./install-docker.sh
             ./install-docker-compose.sh
 
