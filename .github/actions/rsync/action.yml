@@ -1,81 +1,49 @@
-name: Rsync Copy
+name: Copy
 
-description: Copy local directories into a remote location
+description: Copy files and directories to a remote host
 
 inputs:
+  key:
+    description: ssh private key
+    required: true
+
   user:
-    description: remote machine user
+    description: remote machines username
     required: true
 
   host:
-    description: remote host
+    descrition: remote machines host address
     required: true
-
-  key:
-    description: ssh identity file
-    required: true
-
-  port:
-    description: ssh server port
-    required: false
-    default: 22
 
   source:
-    description: local directories (separated by space) to be copied
+    description: source files and directories
     required: true
 
   destination:
-    description: destination directory to save the copied data
+    description: destination path
     required: true
-
-  copy_from:
-    description: copy data FROM the server instead of TO the server (default)
-    default: false
-    required: false
 
 runs:
   using: composite
   steps:
-    - name: setup ssh file
+    - name: create ssh config file
       shell: bash
       run: |
-        # create a key file name if necessary
-        if [[ -z ${RSYNC_ACTION_KEY_NAME+x} ]]; then
-          RSYNC_ACTION_KEY_NAME="SSH_KEY_$RANDOM";
-          echo "RSYNC_ACTION_KEY_NAME=$RSYNC_ACTION_KEY_NAME" >> $GITHUB_ENV;
-        fi
+        COPY_ACTION_KEY_NAME="KEY_$RANDOM"
+        echo "COPY_ACTION_KEY_NAME=$COPY_ACTION_KEY_NAME" >> $GITHUB_ENV
 
-        mkdir ~/.ssh -p
-        echo "${{ inputs.key }}" >> ~/.ssh/$RSYNC_ACTION_KEY_NAME
-        sudo chmod 600 ~/.ssh/$RSYNC_ACTION_KEY_NAME
+        mkdir -p ~/.ssh
+        echo '${{ inputs.key }}' > ~/.ssh/$COPY_ACTION_KEY_NAME
+        sudo chmod 400 ~/.ssh/$COPY_ACTION_KEY_NAME
 
-    - name: maker remote folder if not exists
-      if: inputs.copy_from == 'false'
+    - name: copy files
       shell: bash
       run: |
-        ssh -i ~/.ssh/$RSYNC_ACTION_KEY_NAME -o PubKeyAuthentication=yes -o StrictHostKeyChecking=no -o RequestTTY=no \
-        ${{ inputs.user }}@${{ inputs.host }} -p ${{ inputs.port }} "mkdir -p ${{ inputs.destination }}"
+        rsync -cr  \
+          -e "ssh -o PubKeyAuthentication=yes -o RequestTTY=no -o StrictHostKeyChecking=no -i ~/.ssh/$COPY_ACTION_KEY_NAME" \
+          ${{ inputs.source }} ${{ inputs.user }}@${{ inputs.host }}:${{ inputs.destination }}
 
-    - name: copy files TO the server
-      if: inputs.copy_from == 'false'
-      shell: bash
-      run: |
-        rsync -cr \
-        -e "ssh -i ~/.ssh/$RSYNC_ACTION_KEY_NAME -o PubKeyAuthentication=yes -o StrictHostKeyChecking=no -o RequestTTY=no" \
-        --port ${{ inputs.port }} \
-        ${{ inputs.source }} ${{ inputs.user }}@${{ inputs.host }}:${{ inputs.destination }}
-
-    - name: copy files FROM the server
-      if: inputs.copy_from == 'true'
-      shell: bash
-      run: |
-        rsync -cr \
-        -e "ssh -i ~/.ssh/$RSYNC_ACTION_KEY_NAME -o PubKeyAuthentication=yes -o StrictHostKeyChecking=no -o RequestTTY=no" \
-        --port ${{ inputs.port }} \
-        ${{ inputs.user }}@${{ inputs.host }}:${{ inputs.source }} ${{ inputs.destination }}
-
-    - name: delete ssh key file
+    - name: remove ssh key
       if: always()
       shell: bash
-      run: |
-        rm ~/.ssh/$RSYNC_ACTION_KEY_NAME
+      run: rm ~/.ssh/$COPY_ACTION_KEY_NAME

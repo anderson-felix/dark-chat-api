@@ -1,28 +1,28 @@
-name: SSH
+name: SSH Connection
 
-description: run commands via ssh
+description: Access remote host through ssh
 
 inputs:
-  user:
-    description: remote machine user
-    required: true
-
-  host:
-    description: remote host
-    required: true
-
-  port:
-    description: ssh server port
-    required: false
-    default: 22
-
   key:
     description: ssh private key
     required: true
 
-  commands:
-    description: commands to execute on the remote host
+  user:
+    description: remote host username
     required: true
+
+  host:
+    descrition: remote host address
+    required: true
+
+  command:
+    description: command to be executed in the remote host
+    required: true
+
+outputs:
+  output:
+    description: output from the given command
+    value: ${{ steps.run_command.outputs.response }}
 
 runs:
   using: composite
@@ -32,23 +32,33 @@ runs:
       run: |
         # create a key file name if necessary
         if [[ -z ${SSH_ACTION_KEY_NAME+x} ]]; then
-          SSH_ACTION_KEY_NAME="SSH_KEY_$RANDOM";
-          echo "SSH_ACTION_KEY_NAME=$SSH_ACTION_KEY_NAME" >> $GITHUB_ENV;
+          SSH_ACTION_KEY_NAME="KEY_$RANDOM"
+          echo "SSH_ACTION_KEY_NAME=$SSH_ACTION_KEY_NAME" >> $GITHUB_ENV
         fi
 
-        mkdir ~/.ssh -p
-        echo "${{ inputs.key }}" >> ~/.ssh/$SSH_ACTION_KEY_NAME
+        mkdir -p ~/.ssh
+        echo '${{ inputs.key }}' > ~/.ssh/$SSH_ACTION_KEY_NAME
         sudo chmod 600 ~/.ssh/$SSH_ACTION_KEY_NAME
 
-    - name: execute command
+    - name: run the command
+      id: run_command
       shell: bash
       run: |
-        ssh -i ~/.ssh/$SSH_ACTION_KEY_NAME \
-        -o PubKeyAuthentication=yes -o StrictHostKeyChecking=no -o RequestTTY=no \
-        ${{ inputs.user }}@${{ inputs.host }} -p ${{ inputs.port }} "${{ inputs.commands }}"
+        ACTION_RESPONSE=$( \
+          ssh ${{ inputs.user }}@${{ inputs.host }} \
+          -o PubKeyAuthentication=yes -o RequestTTY=no -o StrictHostKeyChecking=no \
+          -i ~/.ssh/$SSH_ACTION_KEY_NAME \
+          '${{ inputs.command }}' \
+        )
 
-    - name: delete ssh key file
+        # replace Github unhandled characters (::set-output doesn't support multiline)
+        ACTION_RESPONSE="${ACTION_RESPONSE//'%'/'%25'}"
+        ACTION_RESPONSE="${ACTION_RESPONSE//$'\n'/'%0A'}"
+        ACTION_RESPONSE="${ACTION_RESPONSE//$'\r'/'%0D'}"
+
+        echo "::set-output name=response::$(echo $ACTION_RESPONSE)"
+
+    - name: remove ssh key
       if: always()
       shell: bash
-      run: |
-        rm ~/.ssh/$SSH_ACTION_KEY_NAME
+      run: rm ~/.ssh/$SSH_ACTION_KEY_NAME
