@@ -39,3 +39,4 @@ if ! which docker; then
 
 else
   echo "Docker already installed"
+fi
