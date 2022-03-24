@@ -96,6 +96,7 @@ jobs:
             cd app/production
 
             # update the containers
+            docker-compose down
             docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
             docker-compose up -d
 
