@@ -58,7 +58,6 @@ jobs:
         run: |
           cd production/nginx/conf.d
 
-          # make sure envsubst don't replace these nginx variables
           export uri='$uri'
           export host='$host'
 
@@ -95,9 +94,7 @@ jobs:
           command: |
             cd app/production
 
-            # update the containers
-            docker-compose down
-            docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
+            docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest && docker-compose down
             docker-compose up -d
 
       - name: Install SSL certificate
