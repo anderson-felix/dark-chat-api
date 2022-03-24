@@ -108,7 +108,7 @@ jobs:
           ssh_key: ${{ secrets.SSH_KEY }}
           certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
           email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
-          after_installation: mv nginx/conf.d/https.conf.disabled nginx/conf.d/https.conf && docker-compose restart nginx
+          after_installation: 'mv nginx/conf.d/https.conf.disabled nginx/conf.d/https.conf && docker-compose restart nginx'
 
       - name: Remove unused docker images
         uses: ./.github/actions/ssh
