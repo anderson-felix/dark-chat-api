@@ -9,6 +9,7 @@
     "up": "docker-compose up -d",
     "down": "docker-compose down",
     "logs": "docker logs chat-backend -f",
+    "image:build": "docker build --tag chat-backend .",
     "start": "node dist/shared/infra/http/server.js",
     "eslint:fix": "eslint --fix --ext .js,.ts src",
     "test": "jest  --verbose --expand",

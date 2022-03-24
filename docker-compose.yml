@@ -3,13 +3,9 @@ version: '3.7'
 networks:
   chat_network:
 
-volumes:
-  postgres:
-
 services:
   chat-backend:
     image: chat-backend
-    build: .
     container_name: chat-backend
     ports:
       - 3000:3000

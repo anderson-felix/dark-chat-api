@@ -96,7 +96,6 @@ jobs:
             cd app/production
 
             # update the containers
-            docker-compose down
             docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest
             docker-compose up -d
 
@@ -108,12 +107,16 @@ jobs:
           ssh_key: ${{ secrets.SSH_KEY }}
           certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
           email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
-          after_installation: 'mv nginx/conf.d/https.conf.disabled nginx/conf.d/https.conf && docker-compose restart nginx'
 
-      - name: Remove unused docker images
+      - name: Setup files and remove unused images
         uses: ./.github/actions/ssh
         with:
           user: ${{ secrets.SSH_USER }}
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_KEY }}
-          command: docker image prune -af
+          command: |
+            cd ~/app/production
+
+            mv nginx/conf.d/https.conf.disabled nginx/conf.d/https.conf && docker-compose restart nginx
+
+            docker image prune -af
