@@ -106,6 +106,18 @@ jobs:
           certificate_address: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
           email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
 
+      - name: Setup remote container
+        uses: picodebr/ssh-action@v1.2
+        with:
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
+          command: |
+            cd ~/app/production
+
+            docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest && docker-compose down
+            docker-compose up -d
+
       - name: Setup files and remove unused images
         uses: picodebr/ssh-action@v1.2
         with:
