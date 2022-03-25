@@ -92,7 +92,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_KEY }}
           command: |
-            cd app/production
+            cd ~/app/production
 
             docker pull ${{ secrets.DOCKERHUB_USER }}/chat-backend:latest && docker-compose down
             docker-compose up -d
