@@ -79,18 +79,18 @@ jobs:
       - name: Copy production folder to remote machine
         uses: picodebr/copy-action@v1
         with:
-          user: ${{ secrets.SSH_USER }}
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_KEY }}
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
           source: production
           destination: ~/app/
 
       - name: Setup remote container
         uses: picodebr/ssh-action@v1.2
         with:
-          user: ${{ secrets.SSH_USER }}
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_KEY }}
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
           command: |
             cd ~/app/production
 
@@ -109,9 +109,9 @@ jobs:
       - name: Setup files and remove unused images
         uses: picodebr/ssh-action@v1.2
         with:
-          user: ${{ secrets.SSH_USER }}
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_KEY }}
+          ssh_user: ${{ secrets.SSH_USER }}
+          ssh_host: ${{ secrets.SSH_HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
           command: |
             cd ~/app/production
 
