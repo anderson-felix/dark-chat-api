@@ -1,6 +1,6 @@
-name: SSL installer
+name: SSL generator
 
-description: SSL certificate installation with certbot
+description: Installation and renew of the SSL certificate with certbot
 
 inputs:
   ssh_key:
@@ -20,7 +20,7 @@ inputs:
     required: true
 
   email:
-    description: email of the address owner
+    description: email from address owner
     required: true
 
 runs:
@@ -44,7 +44,24 @@ runs:
               certbot/certbot:latest certonly --webroot -w /var/www/html \
               -d ${{ inputs.certificate_address }} --agree-tos --email ${{ inputs.email }} -n
 
-            echo "15 * * * * docker run --rm --volume "$(pwd)/certbot/www:/var/www/html:rw" --volume "$(pwd)/certbot/certificate:/etc/letsencrypt:rw" certbot/certbot:latest certonly --webroot -w /var/www/html -d ${{ inputs.certificate_address }} --agree-tos --email ${{ inputs.email }} -n" | crontab -
+
+            # renew certificate every month
+            crontab -l >> cronlist
+
+            CRONJOBS_COUNT=`grep -ci "" cronlist`
+            MATCHED_COUNT=`grep -ci "certbot/certificate" cronlist`
+
+            if [ $MATCHED_COUNT == 0 ]; then
+              if [ $CRONJOBS_COUNT == 0 ]; then
+                echo "0 0 1 * * docker run --rm --volume \"$(pwd)/certbot/www:/var/www/html:rw\" --volume \"$(pwd)/certbot/certificate:/etc/letsencrypt:rw\" certbot/certbot:latest certonly --webroot -w /var/www/html -d ${{ inputs.certificate_address }} --agree-tos --email ${{ inputs.email }} -n" | crontab -
+              else
+                (crontab -l && echo "0 0 1 * * docker run --rm --volume \"$(pwd)/certbot/www:/var/www/html:rw\" --volume \"$(pwd)/certbot/certificate:/etc/letsencrypt:rw\" certbot/certbot:latest certonly --webroot -w /var/www/html -d ${{ inputs.certificate_address }} --agree-tos --email ${{ inputs.email }} -n") | crontab -
+              fi
+            else
+              echo "cronjob to renew certificate already exists"
+            fi
+
+            rm cronlist
 
             echo "SSL certificate installed."
           else

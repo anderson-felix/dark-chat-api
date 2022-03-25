@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install docker and docker-compose
-        uses: ./.github/actions/docker
+        uses: picodebr/install-docker-action@v1.1
         with:
           ssh_user: ${{ secrets.SSH_USER }}
           ssh_host: ${{ secrets.SSH_HOST }}
@@ -51,7 +51,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/chat-backend:buildcache,mode=max
 
-      - name: Create nginx config files
+      - name: Replace nginx config files
         env:
           SERVER_NAME: ${{ secrets.SSL_CERTIFICATE_ADDRESS }}
         shell: bash
@@ -65,7 +65,7 @@ jobs:
           envsubst < https.conf.template > https.conf.disabled
           rm http.conf.template https.conf.template
 
-      - name: Create config files
+      - name: Replace environment variables config files
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
           APP_API_URL: ${{ secrets.APP_API_URL }}
@@ -76,8 +76,8 @@ jobs:
           envsubst < .env.template > .env
           rm .env.template
 
-      - name: Copy scripts to remote server
-        uses: ./.github/actions/rsync
+      - name: Copy production folder to remote machine
+        uses: picodebr/copy-action@v1
         with:
           user: ${{ secrets.SSH_USER }}
           host: ${{ secrets.SSH_HOST }}
@@ -86,7 +86,7 @@ jobs:
           destination: ~/app/
 
       - name: Setup remote container
-        uses: ./.github/actions/ssh
+        uses: picodebr/ssh-action@v1.2
         with:
           user: ${{ secrets.SSH_USER }}
           host: ${{ secrets.SSH_HOST }}
@@ -98,7 +98,7 @@ jobs:
             docker-compose up -d
 
       - name: Install SSL certificate
-        uses: ./.github/actions/ssl
+        uses: picodebr/ssl-action@v1
         with:
           ssh_user: ${{ secrets.SSH_USER }}
           ssh_host: ${{ secrets.SSH_HOST }}
@@ -107,7 +107,7 @@ jobs:
           email: ${{ secrets.SSL_CERTIFICATE_EMAIL }}
 
       - name: Setup files and remove unused images
-        uses: ./.github/actions/ssh
+        uses: picodebr/ssh-action@v1.2
         with:
           user: ${{ secrets.SSH_USER }}
           host: ${{ secrets.SSH_HOST }}
