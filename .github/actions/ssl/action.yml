@@ -46,10 +46,8 @@ runs:
 
 
             # renew certificate every month
-            crontab -l >> cronlist
-
-            CRONJOBS_COUNT=`grep -ci "" cronlist`
-            MATCHED_COUNT=`grep -ci "certbot/certificate" cronlist`
+            CRONJOBS_COUNT=`crontab -l | grep -ci ""`
+            MATCHED_COUNT=`crontab -l | grep -ci "certbot/certificate"`
 
             if [ $MATCHED_COUNT == 0 ]; then
               if [ $CRONJOBS_COUNT == 0 ]; then
@@ -60,8 +58,6 @@ runs:
             else
               echo "cronjob to renew certificate already exists"
             fi
-
-            rm cronlist
 
             echo "SSL certificate installed."
           else
