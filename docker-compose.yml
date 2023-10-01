@@ -5,10 +5,10 @@ networks:
 
 services:
   chat-backend:
-    image: chat-backend
+    build: .
     container_name: chat-backend
     ports:
-      - 3000:3000
+      - 3333:3333
     restart: always
     networks:
       chat_network:

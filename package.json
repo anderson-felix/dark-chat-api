@@ -6,8 +6,8 @@
   "scripts": {
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files && find dist/ -name \"*.test.ts\" -delete",
     "dev": "yarn up && yarn logs",
-    "up": "docker-compose up -d",
-    "down": "docker-compose down",
+    "up": "docker compose up -d",
+    "down": "docker compose down",
     "logs": "docker logs chat-backend -f",
     "image:build": "docker build --tag chat-backend .",
     "start": "node dist/shared/infra/http/server.js",
