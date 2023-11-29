@@ -19,10 +19,7 @@ const httpServer = http.createServer(app);
 
 const socket = new Socket(
   new Server(httpServer, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
+    cors: { origin: '*', methods: ['GET', 'POST'] },
   }),
 );
 
@@ -42,6 +39,4 @@ app.use(appErrorHandler);
 
 socket.start();
 
-httpServer.listen(port, () =>
-  logger.info(`Server is listening at http://localhost:${port}`),
-);
+httpServer.listen(port, () => logger.info(`Server is listening at http://localhost:${port}`));
